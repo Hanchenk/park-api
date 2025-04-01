@@ -15,7 +15,7 @@ import java.util.Map;
  * 支付管理控制器
  */
 @RestController
-@RequestMapping("/sys/pay")
+@RequestMapping("/sys/pay/records")
 public class SysPayController {
 
     @Autowired
@@ -25,15 +25,13 @@ public class SysPayController {
      * 获取支付记录列表
      */
     @GetMapping("/list")
-    public Result<Map<String, Object>> list(
+    public Result<Page<PayRecord>> list(
             @RequestParam(value = "pageNum", defaultValue = "1") Integer pageNum,
             @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
             @RequestParam(value = "outTradeNo", required = false) String outTradeNo,
             @RequestParam(value = "payMethod", required = false) String payMethod,
             @RequestParam(value = "payType", required = false) Integer payType,
-            @RequestParam(value = "payStatus", required = false) Integer payStatus,
-            @RequestParam(value = "beginTime", required = false) String beginTime,
-            @RequestParam(value = "endTime", required = false) String endTime) {
+            @RequestParam(value = "payStatus", required = false) Integer payStatus) {
         
         // 构建查询条件
         LambdaQueryWrapper<PayRecord> queryWrapper = new LambdaQueryWrapper<>();
@@ -62,12 +60,7 @@ public class SysPayController {
         Page<PayRecord> page = new Page<>(pageNum, pageSize);
         Page<PayRecord> payRecordPage = payRecordService.page(page, queryWrapper);
         
-        // 构建返回结果
-        Map<String, Object> result = new HashMap<>();
-        result.put("records", payRecordPage.getRecords());
-        result.put("total", payRecordPage.getTotal());
-        
-        return Result.success(result);
+        return Result.success(payRecordPage);
     }
     
     /**
