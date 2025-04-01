@@ -1,0 +1,48 @@
+server:
+  port: 8181
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/park?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: hxqhxq521  # 使用您的实际密码
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+  redis:
+    open: true
+    database: 1
+    host: 127.0.0.1
+    port: 6379
+jwt:
+  secret: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4K67DMlSPXbgG0MPp0gH
+  expire: 86400000
+  subject: door
+upload:
+  numberUrl: D:/park/upload/number/
+  excel: D:/park/upload/excel/
+  urlPrefix: http://localhost:8181/
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.southwind.entity
+  configuration:
+    map-underscore-to-camel-case: true
+
+alipay:
+  app-id: 你的支付宝应用ID
+  private-key: 你的支付宝商户私钥
+  public-key: 你的支付宝公钥
+  gateway: https://openapi.alipay.com/gateway.do
+  notify-url: http://你的域名/api/pay/alipay/notify
+  return-url: http://你的域名/api/pay/alipay/return
+  sign-type: RSA2
+  charset: utf-8
+  format: json
+
+wxpay:
+  app-id: 你的微信公众号ID
+  mch-id: 你的微信商户号
+  mch-key: 你的微信商户密钥
+  notify-url: http://你的域名/api/pay/wxpay/notify
+  trade-type: JSAPI
