@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
+import java.time.LocalDateTime;
 
 /**
  * <p>
@@ -162,18 +163,23 @@ public class InOutRecordController {
                     Integer hours = feeMap != null ? feeMap.get("hour") : 0;
                     Integer amount = feeMap != null ? feeMap.get("amount") : 0;
 
+                    // 生成订单号
+                    String outTradeNo = "PARK" + System.currentTimeMillis() + existingRecord.getInOutRecordId();
+
                     // 保存支付记录
                     PayRecord payRecord = new PayRecord();
                     payRecord.setPropertyId(park.getPropertyId());
                     payRecord.setParkId(park.getParkId());
                     payRecord.setNumber(number);
+                    payRecord.setOutTradeNo(outTradeNo);
+                    payRecord.setPayStatus(0); // 待支付
 
                     String result;
                     if(car == null) {
                         // 临时车
                         payRecord.setPayType(1);
                         payRecord.setAmount(amount);
-                        result = "【临时车】"+ number +"离开"+"【"+ park.getParkName() +"】停车"+hours+"小时，缴费"+amount+"元";
+                        result = "【临时车】"+ number +"离开"+"【"+ park.getParkName() +"】停车"+hours+"小时，需缴费"+amount+"元";
                     } else {
                         // 包月车
                         payRecord.setPayType(2);
@@ -183,17 +189,27 @@ public class InOutRecordController {
                             result = "【包月车】"+ number +"离开"+"【"+ park.getParkName() +"】停车"+hours+"小时，无需缴费";
                         } else {
                             payRecord.setAmount(amount);
-                            result = "【包月车】"+ number +"离开"+"【"+ park.getParkName() +"】停车"+hours+"小时，缴费"+amount+"元";
+                            result = "【包月车】"+ number +"离开"+"【"+ park.getParkName() +"】停车"+hours+"小时，需缴费"+amount+"元";
                         }
                     }
 
+                    // 在保存支付记录之前添加 0 元支付的处理
+                    if(payRecord.getAmount() == 0) {
+                        payRecord.setPayStatus(1); // 已支付
+                        payRecord.setTradeNo("/"); // 0元支付无交易号
+                        payRecord.setPayMethod("free"); // 免费
+                        payRecord.setPayTime(LocalDateTime.now()); // 设置支付时间
+                    }
+
                     boolean saveResult = this.payRecordService.save(payRecord);
-                    System.out.println("支付记录保存结果: " + saveResult);
 
                     return Result.ok()
                             .put("status", "success")
                             .put("data", result)
-                            .put("recordId", existingRecord.getInOutRecordId());
+                            .put("recordId", existingRecord.getInOutRecordId())
+                            .put("payRecordId", payRecord.getPayRecordId())
+                            .put("outTradeNo", outTradeNo)
+                            .put("amount", amount);
                 } catch (Exception e) {
                     System.out.println("处理出场记录异常: " + e.getMessage());
                     e.printStackTrace();
