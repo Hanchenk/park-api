@@ -8,6 +8,7 @@ import com.southwind.form.InOutParkForm;
 import com.southwind.form.InOutQueryForm;
 import com.southwind.mapper.CarMapper;
 import com.southwind.mapper.InOutRecordMapper;
+import com.southwind.mapper.ParkMapper;
 import com.southwind.service.*;
 import com.southwind.util.Base64Util;
 import com.southwind.util.ParkApi;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 /**
  * <p>
@@ -47,6 +49,8 @@ public class InOutRecordController {
     private PayRecordService payRecordService;
     @Autowired
     private CarMapper carMapper;
+    @Autowired
+    private ParkMapper parkMapper;
 
     @GetMapping("/chart")
     public Result chart(){
@@ -142,14 +146,6 @@ public class InOutRecordController {
                 existingRecord.setOutTime(new Date());
                 existingRecord.setOutPic(basePath);
 
-                try {
-                    int updateResult = this.inOutRecordMapper.updateById(existingRecord);
-                    System.out.println("更新结果: " + updateResult);
-
-                    if (updateResult <= 0) {
-                        return Result.ok().put("status", "fail").put("data", "更新出场记录失败");
-                    }
-
                     // 计算停车费用
                     Park park1 = this.parkService.getById(existingRecord.getParkId());
                     Map<String, Integer> feeMap = ParkUtil.parkPay(
@@ -163,6 +159,18 @@ public class InOutRecordController {
                     Integer hours = feeMap != null ? feeMap.get("hour") : 0;
                     Integer amount = feeMap != null ? feeMap.get("amount") : 0;
 
+                // 将费用信息保存到 in_out_record 表中
+                existingRecord.setAmount(new BigDecimal(amount));
+                existingRecord.setDuration(hours);
+
+                try {
+                    int updateResult = this.inOutRecordMapper.updateById(existingRecord);
+                    System.out.println("更新结果: " + updateResult);
+
+                    if (updateResult <= 0) {
+                        return Result.ok().put("status", "fail").put("data", "更新出场记录失败");
+                    }
+
                     // 生成订单号
                     String outTradeNo = "PARK" + System.currentTimeMillis() + existingRecord.getInOutRecordId();
 
@@ -173,28 +181,30 @@ public class InOutRecordController {
                     payRecord.setNumber(number);
                     payRecord.setOutTradeNo(outTradeNo);
                     payRecord.setPayStatus(0); // 待支付
+                    payRecord.setAmount(new BigDecimal(amount)); // 使用 BigDecimal 类型
+                    payRecord.setPayType(existingRecord.getPayType());
+                    payRecord.setCreateTime(new Date());
 
                     String result;
                     if(car == null) {
                         // 临时车
                         payRecord.setPayType(1);
-                        payRecord.setAmount(amount);
                         result = "【临时车】"+ number +"离开"+"【"+ park.getParkName() +"】停车"+hours+"小时，需缴费"+amount+"元";
                     } else {
                         // 包月车
                         payRecord.setPayType(2);
                         Date effectTime = car.getEffectTime();
                         if(effectTime != null && effectTime.after(new Date())) {
-                            payRecord.setAmount(0);
+                            payRecord.setAmount(new BigDecimal(0));
                             result = "【包月车】"+ number +"离开"+"【"+ park.getParkName() +"】停车"+hours+"小时，无需缴费";
                         } else {
-                            payRecord.setAmount(amount);
+                            payRecord.setAmount(new BigDecimal(amount));
                             result = "【包月车】"+ number +"离开"+"【"+ park.getParkName() +"】停车"+hours+"小时，需缴费"+amount+"元";
                         }
                     }
 
                     // 在保存支付记录之前添加 0 元支付的处理
-                    if(payRecord.getAmount() == 0) {
+                    if(payRecord.getAmount().compareTo(BigDecimal.ZERO) == 0) {
                         payRecord.setPayStatus(1); // 已支付
                         payRecord.setTradeNo("/"); // 0元支付无交易号
                         payRecord.setPayMethod("free"); // 免费
@@ -232,39 +242,46 @@ public class InOutRecordController {
     }
 
     /**
-     * 获取最新的停车记录
+     * 获取最新停车记录
      */
     @GetMapping("/latest")
-    public Result getLatestRecords(@RequestParam(defaultValue = "10") Integer limit) {
+    public Result getLatestRecords() {
         try {
-            // 获取最新的记录
+            // 获取最新的10条记录
             QueryWrapper<InOutRecord> queryWrapper = new QueryWrapper<>();
             queryWrapper.orderByDesc("in_time");
-            queryWrapper.last("LIMIT " + limit);
+            queryWrapper.last("LIMIT 10");
             
             List<InOutRecord> records = inOutRecordService.list(queryWrapper);
+
+            // 防止空指针异常
+            if (records == null) {
+                return Result.ok().put("data", new ArrayList<>());
+            }
+
             List<Map<String, Object>> resultList = new ArrayList<>();
             
             for (InOutRecord record : records) {
                 Map<String, Object> map = new HashMap<>();
                 map.put("inOutRecordId", record.getInOutRecordId());
-                map.put("number", record.getNumber());
-                map.put("inTime", record.getInTime());
-                map.put("outTime", record.getOutTime());
-                map.put("payType", record.getPayType() != null ? record.getPayType() : 1); // 默认为临时车辆
-                map.put("money", record.getMoney());
+                map.put("parkId", record.getParkId());
                 
                 // 获取停车场名称
                 if (record.getParkId() != null) {
-                    Park park = parkService.getById(record.getParkId());
-                    if (park != null) {
-                        map.put("parkName", park.getParkName());
-                    } else {
-                        map.put("parkName", "未知停车场");
-                    }
+                    String parkName = parkMapper.getNameById(record.getParkId());
+                    map.put("parkName", parkName != null ? parkName : "未知停车场");
                 } else {
                     map.put("parkName", "未知停车场");
                 }
+
+                map.put("number", record.getNumber());
+                map.put("inTime", record.getInTime());
+                map.put("outTime", record.getOutTime());
+                map.put("inPic", record.getInPic());
+                map.put("outPic", record.getOutPic());
+                map.put("payType", record.getPayType());
+                map.put("amount", record.getAmount());
+                map.put("duration", record.getDuration());
                 
                 resultList.add(map);
             }

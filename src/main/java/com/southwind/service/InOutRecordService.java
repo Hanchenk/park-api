@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.southwind.form.InOutQueryForm;
 import com.southwind.vo.PageVO;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -24,4 +25,10 @@ public interface InOutRecordService extends IService<InOutRecord> {
      * @return 包含入场和出场数据的Map
      */
     Map<String, Object> getDailyTrafficTrend();
+
+    /**
+     * 获取各停车场剩余车位信息
+     * @return 各停车场的剩余车位信息
+     */
+    List<Map<String, Object>> getParkingSpacesInfo();
 }

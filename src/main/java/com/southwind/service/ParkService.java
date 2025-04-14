@@ -4,6 +4,8 @@ import com.southwind.entity.Park;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.southwind.form.ParkListForm;
 import com.southwind.vo.PageVO;
+import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -15,4 +17,10 @@ import com.southwind.vo.PageVO;
  */
 public interface ParkService extends IService<Park> {
     public PageVO parkList(ParkListForm parkListForm);
+
+    /**
+     * 获取停车场位置信息
+     * @return 停车场位置信息列表
+     */
+    List<Map<String, Object>> getParkLocations();
 }

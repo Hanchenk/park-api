@@ -5,7 +5,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/park?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
     username: root
-    password: hxqhxq521  # 使用您的实际密码
+    password: hxqhxq521
   jackson:
     time-zone: GMT+8
     date-format: yyyy-MM-dd HH:mm:ss
@@ -41,8 +41,8 @@ alipay:
   format: json
 
 wxpay:
-  app-id: 你的微信公众号ID
-  mch-id: 你的微信商户号
-  mch-key: 你的微信商户密钥
-  notify-url: http://你的域名/api/pay/wxpay/notify
+  app-id:
+  mch-id:
+  mch-key:
+  notify-url: http:///api/pay/wxpay/notify
   trade-type: JSAPI

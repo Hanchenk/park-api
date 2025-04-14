@@ -14,8 +14,8 @@ public class ParkApplication {
 
     public static void main(String[] args) {
         // 指定配置文件路径
-        SpringApplication.run(ParkApplication.class, 
-            "--spring.config.location=G:\\毕业设计\\park-lot\\park_demo\\src\\main\\resources\\application.yml");
+        SpringApplication.run(ParkApplication.class,
+            "--spring.config.location=G:\\毕业设计\\park-lot\\public\\park_demo\\src\\main\\resources\\application.yml");
     }
 
     @Bean

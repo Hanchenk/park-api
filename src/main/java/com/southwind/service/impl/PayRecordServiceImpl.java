@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -70,5 +71,10 @@ public class PayRecordServiceImpl extends ServiceImpl<PayRecordMapper, PayRecord
         pageVO.setPageSize(selectPage.getSize());
         pageVO.setTotalPage(selectPage.getPages());
         return pageVO;
+    }
+
+    @Override
+    public List<Map<String, Object>> getIncomeByPark(String date) {
+        return baseMapper.selectIncomeByPark(date);
     }
 }

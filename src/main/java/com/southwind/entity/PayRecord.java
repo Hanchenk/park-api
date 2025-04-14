@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
 import java.io.Serializable;
 import java.util.Date;
+import java.math.BigDecimal;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -43,7 +44,11 @@ public class PayRecord implements Serializable {
      */
     private Integer payType;
 
-    private Integer amount;
+    /**
+     * 支付金额
+     */
+    @TableField("amount")
+    private BigDecimal amount;
 
     @TableField(fill = FieldFill.INSERT)
     private Date createTime;

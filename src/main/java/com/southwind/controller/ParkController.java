@@ -85,5 +85,16 @@ public class ParkController {
         return Result.ok().put("data", list);
     }
 
+    @GetMapping("/locations")
+    public Result getParkLocations() {
+        try {
+            List<Map<String, Object>> parkLocations = parkService.getParkLocations();
+            return Result.ok().put("data", parkLocations);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("获取停车场位置信息失败: " + e.getMessage());
+        }
+    }
+
 }
 
